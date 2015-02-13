@@ -7,7 +7,7 @@ Created on Thu Feb 12 18:50:33 2015
 
 import pandas as pd
 import numpy as np
-import statsmodels.api as sm
+import statsmodels.api as stats
 import matplotlib.pyplot as plt
 
 loansData = pd.read_csv('https://spark-public.s3.amazonaws.com/dataanalysis/loansData.csv')
@@ -38,24 +38,3 @@ plt.figure()
 
 loansData['FICO.Score'].hist()
 plt.show()
-
-intercept = [1] * len(loansData)
-loansData['Intercept'] = intercept
-
-ind_vars = ['Intercept', 'Amount.Requested', 'FICO.Score']
-intrate = loansData['Interest.Rate']
-intrate = [1 if x < 12 else 0 for x in intrate]
-loansData['IR_TF'] = intrate
-X = loansData[ind_vars]
-y = loansData['IR_TF']
- 
-logit = sm.Logit(y, X)
-result = logit.fit()
-coeff = result.params
-print coeff
-
-#Output
-#Intercept          -60.125045
-#Amount.Requested    -0.000174
-#FICO.Score           0.087423
-#dtype: float64
