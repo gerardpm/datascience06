@@ -72,7 +72,7 @@ import collections
 
 exec_time = parse(r.json()['executionTime'])
 with con:
-    cur.execute('INSERT INTO available_bikes (execution_time) VALUES (?)', (exec_time.strftime('%s')),)
+    cur.execute('INSERT INTO available_bikes (execution_time) VALUES (?)', (exec_time.strftime('%s'),))
 
 id_bikes = collections.defaultdict(int)
 for station in r.json()['stationBeanList']:
