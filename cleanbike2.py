@@ -4,8 +4,12 @@ Created on Wed Feb 25 16:03:19 2015
 
 @author: gerar_000
 """
-
+import matplotlib.pyplot as plt
+import pandas as pd
 import requests
+import time
+import collections
+
 r = requests.get('http://www.citibikenyc.com/stations/json')
 r.text
 r.json()
@@ -24,9 +28,6 @@ r.json()['stationBeanList'][0]
 
 from pandas.io.json import json_normalize
 df = json_normalize(r.json()['stationBeanList'])
-
-import matplotlib.pyplot as plt
-import pandas as pd
 
 df['availableBikes'].hist()
 plt.show()
@@ -64,11 +65,7 @@ station_ids
 with con:
     cur.execute("CREATE TABLE available_bikes ( execution_time INT, " +  ", ".join(station_ids) + ");")
 
-import time
-
 from dateutil.parser import parse 
-
-import collections
 
 exec_time = parse(r.json()['executionTime'])
 with con:
@@ -77,6 +74,7 @@ with con:
 id_bikes = collections.defaultdict(int)
 for station in r.json()['stationBeanList']:
     id_bikes[station['id']] = station['availableBikes']
+
 with con:
     for k, v in id_bikes.iteritems():
         cur.execute("UPDATE available_bikes SET _" + str(k) + " = " + str(v) + " WHERE execution_time = " + exec_time.strftime('%s') + ";")
@@ -85,3 +83,39 @@ with con:
 time.sleep(60)
 
 con.close()
+
+
+con = lite.connect('citi_bike2.db')
+cur = con.cursor()
+
+df = pd.read_sql_query("SELECT * FROM available_bikes ORDER BY execution_time",con,index_col='execution_time')
+
+hour_change = collections.defaultdict(int)
+for col in df.columns:
+    station_vals = df[col].tolist()
+    station_id = col[1:]
+    station_change = 0
+    for k,v in enumerate(station_vals):
+        if k < len(station_vals) - 1:
+            station_change += abs(station_vals[k] - station_vals[k+1])
+    hour_change[int(station_id)] = station_change 
+    
+def keywithmaxval(d):
+    v = list(d.values())
+    k = list(d.keys())
+
+    return k[v.index(max(v))]
+
+max_station = keywithmaxval(hour_change)
+
+cur.execute("SELECT id, stationname, latitude, longitude FROM citibike_reference WHERE id = ?", (max_station,))
+data = cur.fetchone()
+
+print "The most active station is station id %s at %s latitude: %s longitude: %s " % data
+
+print "With " + str(hour_change[379]) + " bicycles coming and going in the hour between " + datetime.datetime.fromtimestamp(int(df.index[0])).strftime('%Y-%m-%dT%H:%M:%S') + " and " + datetime.datetime.fromtimestamp(int(df.index[-1])).strftime('%Y-%m-%dT%H:%M:%S')
+
+import matplotlib.pyplot as plt
+
+plt.bar(hour_change.keys(), hour_change.values())
+plt.show()
