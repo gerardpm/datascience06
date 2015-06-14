@@ -7,13 +7,15 @@ Created on Wed Mar 18 20:08:56 2015
 
 from bs4 import BeautifulSoup
 import requests
-import pandas as pd
 import sqlite3 as lite
+import pandas as pd
+
 
 url = "http://web.archive.org/web/20110514112442/http://unstats.un.org/unsd/demographic/products/socind/education.htm"
 
 r = requests.get(url)
-soup = BeautifulSoup(r.content)
+
+soup = BeautifulSoup(r.content) 
 A = soup('table')[6].findAll('tr', {'class': 'tcont'})
 B = [x for x in A if len(x)== 25] 
 
@@ -27,18 +29,9 @@ for rows in B:
     women = col[10].string
     record = (country, year, total, men, women)
     records.append(record)
-column_name = ['country','year', 'total', 'men', 'women']
+column_name = ['country', 'year', 'total', 'men', 'women']
 table = pd.DataFrame(records, columns = column_name )
+table.to_csv('C:\Users\gerar_000\Projects' , index = t)
+    
 
-con = lite.connect('uninfo.db')
-cur = con.cursor()
 
-import csv
-
-with open('C:\\Users\\gerar_000\\Projects\\ny.gdp.mktp.cd_Indicator_en_csv_v2\\ny.gdp.mktp.cd_Indicator_en_csv_v2.csv','rU') as inputFile:
-    next(inputFile)
-    header = next(inputFile)
-    inputReader = csv.reader(inputFile)
-    for line in inputReader:
-        with con:
-            cur.execute('INSERT INTO gdp (country_name, _1999, _2000, _2001, _2002, _2003, _2004, _2005, _2006, _2007, _2008, _2009, _2010) VALUES ("' + line[0] + '","' + '","'.join(line[42:-5]) + '");')
